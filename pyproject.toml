@@ -1,0 +1,91 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "evalforge"
+version = "0.1.0"
+description = "Multi Provider LLM Evaluation Platform"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.16.0",
+  "cryptography>=45.0.0",
+  "email-validator>=2.2.0",
+  "fastapi>=0.116.0",
+  "httpx>=0.28.0",
+  "itsdangerous>=2.2.0",
+  "jinja2>=3.1.6",
+  "jsonschema>=4.24.0",
+  "nicegui>=2.24.0",
+  "orjson>=3.10.0",
+  "psycopg[binary]>=3.2.0",
+  "pwdlib[argon2]>=0.2.1",
+  "pydantic-settings>=2.10.0",
+  "python-multipart>=0.0.20",
+  "redis>=6.2.0",
+  "reportlab>=4.4.0",
+  "rq>=2.4.0",
+  "sqlalchemy>=2.0.41",
+  "structlog>=25.4.0",
+  "uvicorn[standard]>=0.35.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.16.0",
+  "pre-commit>=4.2.0",
+  "pytest>=8.4.0",
+  "pytest-asyncio>=1.0.0",
+  "pytest-cov>=6.2.0",
+  "respx>=0.22.0",
+  "ruff>=0.12.0",
+]
+
+[project.scripts]
+evalforge = "app.main:run"
+evalforge-worker = "app.workers.worker:run"
+evalforge-seed = "scripts.seed_demo:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = ["migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC", "S"]
+ignore = ["S101", "B008", "E501", "S104", "S105", "S106", "SIM117"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
+strict = true
+exclude = ["migrations"]
+disable_error_code = ["import-untyped"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --cov=app --cov-report=term-missing"
+markers = ["live: uses a real provider API and may incur cost"]
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+omit = [
+  "app/api/*",
+  "app/main.py",
+  "app/models/*",
+  "app/schemas/*",
+  "app/ui/*",
+  "app/workers/*",
+  "app/providers/anthropic_provider.py",
+  "app/providers/gemini_provider.py",
+  "app/providers/mistral_provider.py",
+  "app/providers/ollama_provider.py",
+  "app/providers/openai_compatible.py",
+  "app/providers/openai_provider.py",
+  "app/providers/openrouter_provider.py",
+]
