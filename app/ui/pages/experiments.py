@@ -243,7 +243,7 @@ def register() -> None:
                 )
                 ui.label(experiment.name).classes("text-2xl font-bold")
                 ui.badge(experiment.status.value.replace("_", " "), color="green")
-            with ui.grid(columns=4).classes("w-full gap-4 max-[800px]:grid-cols-2"):
+            with ui.element("div").classes("ef-summary-grid"):
                 for label, value in [
                     (t("progress"), f"{experiment.progress:.0f}%"),
                     (t("total_cost"), f"{experiment.total_cost:.4f} {experiment.currency}"),

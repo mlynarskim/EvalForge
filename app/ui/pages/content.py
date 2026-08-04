@@ -98,9 +98,7 @@ def register() -> None:
                 with ui.card().classes("ef-card w-full p-10 items-center"):
                     ui.icon("terminal", size="48px", color="grey")
                     ui.label(t("no_data")).classes("ef-muted")
-            with ui.grid(columns=3).classes(
-                "w-full gap-5 max-[1000px]:grid-cols-2 max-[650px]:grid-cols-1"
-            ):
+            with ui.element("div").classes("ef-card-grid"):
                 for prompt in prompts:
                     latest = prompt.versions[-1]
                     with ui.card().classes("ef-card p-5"):
@@ -212,9 +210,7 @@ def register() -> None:
                 with ui.row().classes("w-full justify-end"):
                     ui.button(t("cancel"), on_click=dialog.close).props("flat")
                     ui.button(t("create"), on_click=create_dataset).props("unelevated")
-            with ui.grid(columns=3).classes(
-                "w-full gap-5 max-[1000px]:grid-cols-2 max-[650px]:grid-cols-1"
-            ):
+            with ui.element("div").classes("ef-card-grid"):
                 for dataset in datasets:
                     version = dataset.versions[-1]
                     with ui.card().classes("ef-card p-5"):

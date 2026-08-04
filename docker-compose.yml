@@ -29,6 +29,16 @@ services:
     env_file: .env
     ports:
       - "8080:8080"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,10 +47,10 @@ services:
 
   worker:
     build: .
-    command: sh -c "alembic upgrade head && evalforge-worker"
+    command: evalforge-worker
     env_file: .env
     depends_on:
-      postgres:
+      app:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -48,4 +58,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-

@@ -82,6 +82,36 @@ def register() -> None:
                 with ui.row().classes("ef-demo w-full items-center p-3"):
                     ui.icon("science", color="amber")
                     ui.label(t("demo_data")).classes("font-medium")
+            with ui.card().classes("ef-card p-5 w-full"):
+                with ui.row().classes("w-full items-start gap-3"):
+                    ui.icon("route", color="primary", size="30px")
+                    with ui.column().classes("gap-1"):
+                        ui.label(t("get_started")).classes("text-xl font-semibold")
+                        ui.label(t("onboarding_intro")).classes("ef-muted")
+                onboarding_steps = [
+                    ("1", t("step_connect_title"), t("step_connect_description")),
+                    ("2", t("step_prepare_title"), t("step_prepare_description")),
+                    ("3", t("step_run_title"), t("step_run_description")),
+                    ("4", t("step_analyze_title"), t("step_analyze_description")),
+                ]
+                with ui.element("div").classes("ef-onboarding-grid mt-3"):
+                    for number, title, description in onboarding_steps:
+                        with ui.column().classes("ef-step gap-2"):
+                            with ui.row().classes("items-center gap-2"):
+                                ui.label(number).classes("ef-step-number")
+                                ui.label(title).classes("font-semibold")
+                            ui.label(description).classes("ef-muted text-sm")
+                with ui.row().classes("w-full gap-2 mt-2"):
+                    ui.button(
+                        t("open_providers"),
+                        icon="key",
+                        on_click=lambda: ui.navigate.to("/providers"),
+                    ).props("unelevated")
+                    ui.button(
+                        t("open_demo_experiment"),
+                        icon="science",
+                        on_click=lambda: ui.navigate.to("/experiments"),
+                    ).props("outline")
             stats = [
                 (t("total_experiments"), str(experiment_count), "science", "indigo"),
                 (t("completed_runs"), str(run_count), "check_circle", "green"),
@@ -90,16 +120,14 @@ def register() -> None:
                 (t("active_models"), str(active_models), "memory", "blue"),
                 (t("regressions"), "0", "trending_down", "orange"),
             ]
-            with ui.grid(columns=6).classes(
-                "w-full gap-4 max-[1100px]:grid-cols-3 max-[700px]:grid-cols-1"
-            ):
+            with ui.element("div").classes("ef-stats-grid"):
                 for label, value, icon, color in stats:
                     with ui.card().classes("ef-card ef-stat p-5"):
                         with ui.row().classes("items-center justify-between w-full"):
                             ui.label(label).classes("ef-muted text-sm")
                             ui.icon(icon, color=color).classes("text-2xl")
-                        ui.label(value).classes("text-2xl font-bold mt-3")
-            with ui.grid(columns=2).classes("w-full gap-5 max-[900px]:grid-cols-1"):
+                        ui.label(value).classes("ef-stat-value text-2xl font-bold mt-3")
+            with ui.element("div").classes("ef-charts-grid"):
                 with ui.card().classes("ef-card p-5"):
                     ui.label(t("cost_over_time")).classes("text-lg font-semibold")
                     ui.echart(

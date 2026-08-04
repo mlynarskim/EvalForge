@@ -35,9 +35,7 @@ def register() -> None:
             }
         with page_frame("providers"):
             ui.label(t("provider_help")).classes("ef-muted")
-            with ui.grid(columns=3).classes(
-                "w-full gap-5 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1"
-            ):
+            with ui.element("div").classes("ef-card-grid"):
                 for provider in providers:
                     credential = credentials.get(provider.id)
                     with ui.card().classes("ef-card p-5"):
