@@ -5,6 +5,7 @@ import uuid
 from nicegui import ui
 from sqlalchemy import select
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models import Experiment, Report
 from app.models.entities import ExperimentStatus
@@ -50,47 +51,49 @@ def register() -> None:
             )
         with page_frame("reports"):
             ui.label(t("report_help")).classes("ef-muted")
-            with ui.card().classes("ef-card p-5 w-full"):
-                ui.label(t("generate_report")).classes("text-lg font-semibold")
-                experiment_select = (
-                    ui.select(
-                        {str(item.id): item.name for item in experiments}, label=t("experiments")
+            if not settings.showcase_mode:
+                with ui.card().classes("ef-card p-5 w-full"):
+                    ui.label(t("generate_report")).classes("text-lg font-semibold")
+                    experiment_select = (
+                        ui.select(
+                            {str(item.id): item.name for item in experiments},
+                            label=t("experiments"),
+                        )
+                        .props("outlined")
+                        .classes("w-full")
                     )
-                    .props("outlined")
-                    .classes("w-full")
-                )
-                format_select = (
-                    ui.select(
-                        {"pdf": "PDF", "html": "HTML", "csv": "CSV", "json": "JSON"},
-                        value="pdf",
-                        label=t("format"),
+                    format_select = (
+                        ui.select(
+                            {"pdf": "PDF", "html": "HTML", "csv": "CSV", "json": "JSON"},
+                            value="pdf",
+                            label=t("format"),
+                        )
+                        .props("outlined")
+                        .classes("w-full")
                     )
-                    .props("outlined")
-                    .classes("w-full")
-                )
 
-                def generate() -> None:
-                    if not experiment_select.value:
-                        ui.notify(t("no_data"), type="warning")
-                        return
+                    def generate() -> None:
+                        if not experiment_select.value:
+                            ui.notify(t("no_data"), type="warning")
+                            return
 
-                    try:
-                        with SessionLocal() as action_db:
-                            report_service.generate(
-                                action_db,
-                                uuid.UUID(experiment_select.value),
-                                user.id,
-                                format_select.value,
-                                workspace.default_currency,
-                            )
-                        ui.notify(t("saved"), type="positive")
-                        ui.navigate.reload()
-                    except Exception as exc:
-                        ui.notify(str(exc), type="negative")
+                        try:
+                            with SessionLocal() as action_db:
+                                report_service.generate(
+                                    action_db,
+                                    uuid.UUID(experiment_select.value),
+                                    user.id,
+                                    format_select.value,
+                                    workspace.default_currency,
+                                )
+                            ui.notify(t("saved"), type="positive")
+                            ui.navigate.reload()
+                        except Exception as exc:
+                            ui.notify(str(exc), type="negative")
 
-                ui.button(t("generate_report"), icon="description", on_click=generate).props(
-                    "unelevated"
-                )
+                    ui.button(t("generate_report"), icon="description", on_click=generate).props(
+                        "unelevated"
+                    )
             with ui.card().classes("ef-card p-0 w-full"):
                 if not reports:
                     ui.label(t("no_data")).classes("p-8 ef-muted")
@@ -128,9 +131,10 @@ def register() -> None:
                             icon="download",
                             on_click=lambda: ui.download(report_item.file_path),
                         ).props("flat")
-                        ui.button(icon="delete", on_click=delete_dialog.open).props(
-                            f"flat round color=negative aria-label={t('delete')}"
-                        )
+                        if not settings.showcase_mode:
+                            ui.button(icon="delete", on_click=delete_dialog.open).props(
+                                f"flat round color=negative aria-label={t('delete')}"
+                            )
 
                 for report_item in reports:
                     render_report_row(report_item)

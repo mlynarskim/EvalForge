@@ -82,9 +82,7 @@ def page_frame(title_key: str) -> Iterator[User]:
             with ui.column().classes("gap-0"):
                 ui.label(user.display_name).classes("text-sm font-medium")
                 ui.label(user.email).classes("text-xs ef-muted")
-    with ui.header().classes(
-        "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 h-16"
-    ):
+    with ui.header().classes("ef-header border-b h-16"):
         ui.button(icon="menu", on_click=drawer.toggle).props("flat round aria-label=Menu")
         ui.label(t(title_key)).classes("text-lg font-semibold")
         ui.space()
@@ -97,6 +95,11 @@ def page_frame(title_key: str) -> Iterator[User]:
         ui.badge("DEMO", color="amber") if user.is_demo else None
         ui.button(icon="logout", on_click=logout).props(f"flat round aria-label={t('logout')}")
     with ui.column().classes("ef-page w-full gap-6"):
+        if settings.showcase_mode:
+            with ui.card().classes("ef-demo w-full p-4 shadow-none"):
+                with ui.row().classes("items-center gap-3"):
+                    ui.icon("visibility", color="amber")
+                    ui.label(t("showcase_banner")).classes("font-medium")
         with ui.row().classes("w-full items-center"):
             with ui.column().classes("gap-0"):
                 ui.label(t(title_key)).classes("text-3xl font-bold tracking-tight")

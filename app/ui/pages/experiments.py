@@ -6,6 +6,7 @@ from nicegui import ui
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models import (
     Dataset,
@@ -78,7 +79,10 @@ def register() -> None:
         with page_frame("experiments"):
             with ui.row().classes("w-full justify-end"):
                 dialog = ui.dialog()
-                ui.button(t("new_experiment"), icon="add", on_click=dialog.open).props("unelevated")
+                if not settings.showcase_mode:
+                    ui.button(t("new_experiment"), icon="add", on_click=dialog.open).props(
+                        "unelevated"
+                    )
             with dialog, ui.card().classes("w-[820px] max-w-full p-5"):
                 ui.label(t("new_experiment")).classes("text-xl font-semibold")
                 stepper = ui.stepper().props("flat animated").classes("w-full")
@@ -265,13 +269,17 @@ def register() -> None:
                             ui.navigate.to(f"/experiments/{experiment_item.id}")
 
                         ui.button(t("view"), icon="arrow_forward", on_click=view).props("flat")
-                        ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
-                            "flat round"
-                        )
-                        ui.button(icon="delete", on_click=delete_dialog.open).props(
-                            f"flat round color=negative aria-label={t('delete')}"
-                        )
-                        if experiment_item.status.value in {"draft", "paused"}:
+                        if not settings.showcase_mode:
+                            ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
+                                "flat round"
+                            )
+                            ui.button(icon="delete", on_click=delete_dialog.open).props(
+                                f"flat round color=negative aria-label={t('delete')}"
+                            )
+                        if not settings.showcase_mode and experiment_item.status.value in {
+                            "draft",
+                            "paused",
+                        }:
 
                             def run() -> None:
                                 try:

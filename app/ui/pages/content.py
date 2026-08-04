@@ -6,6 +6,7 @@ from nicegui import ui
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models import Dataset, DatasetVersion, Prompt, PromptVersion, TestCase
 from app.schemas.dataset import TestCaseInput
@@ -37,7 +38,8 @@ def register() -> None:
         with page_frame("prompts"):
             with ui.row().classes("w-full justify-end"):
                 dialog = ui.dialog()
-                ui.button(t("new_prompt"), icon="add", on_click=dialog.open).props("unelevated")
+                if not settings.showcase_mode:
+                    ui.button(t("new_prompt"), icon="add", on_click=dialog.open).props("unelevated")
             with dialog, ui.card().classes("w-[760px] max-w-full p-5"):
                 ui.label(t("new_prompt")).classes("text-xl font-semibold")
                 name = ui.input(t("name")).props("outlined").classes("w-full")
@@ -208,12 +210,13 @@ def register() -> None:
                             f"{t('variables')}: {', '.join(latest.variables) or 'none'}"
                         ).classes("text-xs ef-muted")
                         with ui.row().classes("w-full justify-end mt-2"):
-                            ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
-                                "flat"
-                            )
-                            ui.button(
-                                t("delete"), icon="delete", on_click=delete_dialog.open
-                            ).props("flat color=negative")
+                            if not settings.showcase_mode:
+                                ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
+                                    "flat"
+                                )
+                                ui.button(
+                                    t("delete"), icon="delete", on_click=delete_dialog.open
+                                ).props("flat color=negative")
 
                 for prompt_item in prompts:
                     render_prompt_card(prompt_item)
@@ -238,7 +241,10 @@ def register() -> None:
         with page_frame("datasets"):
             with ui.row().classes("w-full justify-end"):
                 dialog = ui.dialog()
-                ui.button(t("new_dataset"), icon="add", on_click=dialog.open).props("unelevated")
+                if not settings.showcase_mode:
+                    ui.button(t("new_dataset"), icon="add", on_click=dialog.open).props(
+                        "unelevated"
+                    )
             with dialog, ui.card().classes("w-[780px] max-w-full p-5"):
                 ui.label(t("new_dataset")).classes("text-xl font-semibold")
                 name = ui.input(t("name")).props("outlined").classes("w-full")
@@ -412,12 +418,13 @@ def register() -> None:
                                 "text-xs ef-muted"
                             )
                         with ui.row().classes("w-full justify-end mt-2"):
-                            ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
-                                "flat"
-                            )
-                            ui.button(
-                                t("delete"), icon="delete", on_click=delete_dialog.open
-                            ).props("flat color=negative")
+                            if not settings.showcase_mode:
+                                ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
+                                    "flat"
+                                )
+                                ui.button(
+                                    t("delete"), icon="delete", on_click=delete_dialog.open
+                                ).props("flat color=negative")
 
                 for dataset_item in datasets:
                     render_dataset_card(dataset_item)

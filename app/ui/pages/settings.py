@@ -1,5 +1,6 @@
 from nicegui import app, ui
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models import User, Workspace
 from app.ui.i18n import t
@@ -36,17 +37,20 @@ def register() -> None:
                     .props("outlined")
                     .classes("w-full")
                 )
+                if settings.showcase_mode:
+                    currency.props("disable")
 
                 def save() -> None:
-                    with SessionLocal() as db:
-                        db_user = db.get(User, user.id)
-                        db_workspace = db.get(Workspace, workspace.id)
-                        if db_user is None or db_workspace is None:
-                            ui.notify("Settings are unavailable", type="negative")
-                            return
-                        db_user.language = language.value
-                        db_workspace.default_currency = currency.value
-                        db.commit()
+                    if not settings.showcase_mode:
+                        with SessionLocal() as db:
+                            db_user = db.get(User, user.id)
+                            db_workspace = db.get(Workspace, workspace.id)
+                            if db_user is None or db_workspace is None:
+                                ui.notify("Settings are unavailable", type="negative")
+                                return
+                            db_user.language = language.value
+                            db_workspace.default_currency = currency.value
+                            db.commit()
                     app.storage.user["language"] = language.value
                     ui.notify(t("saved"), type="positive")
                     ui.navigate.reload()

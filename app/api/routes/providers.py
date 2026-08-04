@@ -6,7 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import WorkspaceContext, require_roles, workspace_context
+from app.api.dependencies import (
+    WorkspaceContext,
+    require_roles,
+    require_writable,
+    workspace_context,
+)
 from app.database import get_db
 from app.models import Provider, ProviderCredential
 from app.models.entities import Role, utcnow
@@ -49,7 +54,7 @@ def list_providers(
     return result
 
 
-@router.put("/{provider_id}/credential")
+@router.put("/{provider_id}/credential", dependencies=[Depends(require_writable)])
 def save_credential(
     provider_id: uuid.UUID,
     payload: CredentialUpsert,
@@ -85,7 +90,9 @@ def save_credential(
     return {"status": credential.connection_status, "masked_value": credential.masked_value}
 
 
-@router.delete("/{provider_id}/credential", status_code=204)
+@router.delete(
+    "/{provider_id}/credential", status_code=204, dependencies=[Depends(require_writable)]
+)
 def delete_credential(
     provider_id: uuid.UUID,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN)),
@@ -110,7 +117,7 @@ def delete_credential(
         db.commit()
 
 
-@router.post("/{provider_id}/validate")
+@router.post("/{provider_id}/validate", dependencies=[Depends(require_writable)])
 async def validate_credential(
     provider_id: uuid.UUID,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN)),
@@ -143,7 +150,7 @@ async def validate_credential(
     return {"status": credential.connection_status}
 
 
-@router.post("/{provider_id}/sync")
+@router.post("/{provider_id}/sync", dependencies=[Depends(require_writable)])
 async def sync_models(
     provider_id: uuid.UUID,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN, Role.MEMBER)),

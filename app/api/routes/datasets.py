@@ -10,7 +10,12 @@ from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.dependencies import WorkspaceContext, require_roles, workspace_context
+from app.api.dependencies import (
+    WorkspaceContext,
+    require_roles,
+    require_writable,
+    workspace_context,
+)
 from app.config import settings
 from app.database import get_db
 from app.models import Dataset, DatasetVersion, TestCase
@@ -67,7 +72,7 @@ def list_datasets(
     ]
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=[Depends(require_writable)])
 def create_dataset(
     payload: DatasetCreate,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN, Role.MEMBER)),
@@ -96,7 +101,7 @@ def create_dataset(
     return {"id": dataset.id, "version": 1, "case_count": len(payload.test_cases)}
 
 
-@router.post("/{dataset_id}/versions", status_code=201)
+@router.post("/{dataset_id}/versions", status_code=201, dependencies=[Depends(require_writable)])
 def create_dataset_version(
     dataset_id: uuid.UUID,
     payload: DatasetVersionCreate,
@@ -131,7 +136,7 @@ def create_dataset_version(
     return {"id": version.id, "version": number, "case_count": len(payload.test_cases)}
 
 
-@router.post("/import", status_code=201)
+@router.post("/import", status_code=201, dependencies=[Depends(require_writable)])
 async def import_dataset(
     name: str,
     file: UploadFile = File(...),

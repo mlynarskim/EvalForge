@@ -7,7 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.dependencies import WorkspaceContext, require_roles, workspace_context
+from app.api.dependencies import (
+    WorkspaceContext,
+    require_roles,
+    require_writable,
+    workspace_context,
+)
 from app.database import get_db
 from app.models import Prompt, PromptVersion
 from app.models.entities import Role
@@ -47,7 +52,7 @@ def list_prompts(
     return [_serialize(prompt) for prompt in prompts]
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=[Depends(require_writable)])
 def create_prompt(
     payload: PromptCreate,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN, Role.MEMBER)),
@@ -93,7 +98,7 @@ def get_prompt(
     return {**_serialize(prompt), "versions": prompt.versions}
 
 
-@router.post("/{prompt_id}/versions", status_code=201)
+@router.post("/{prompt_id}/versions", status_code=201, dependencies=[Depends(require_writable)])
 def create_version(
     prompt_id: uuid.UUID,
     payload: PromptVersionCreate,
@@ -164,7 +169,7 @@ def compare_versions(
     return {"diff": "\n".join(diff)}
 
 
-@router.patch("/{prompt_id}/archive")
+@router.patch("/{prompt_id}/archive", dependencies=[Depends(require_writable)])
 def archive_prompt(
     prompt_id: uuid.UUID,
     archived: bool = True,

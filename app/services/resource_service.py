@@ -23,6 +23,7 @@ from app.models.entities import ExperimentStatus
 from app.schemas.dataset import TestCaseInput
 from app.services.audit_service import audit
 from app.services.experiment_service import extract_variables
+from app.services.showcase_service import ensure_writable
 
 
 class ResourceService:
@@ -42,6 +43,7 @@ class ResourceService:
         user_template: str,
         response_format: str,
     ) -> Prompt:
+        ensure_writable()
         prompt = db.scalar(
             select(Prompt)
             .options(selectinload(Prompt.versions))
@@ -80,6 +82,7 @@ class ResourceService:
         actor_id: uuid.UUID,
         prompt_id: uuid.UUID,
     ) -> None:
+        ensure_writable()
         prompt = db.scalar(
             select(Prompt).where(Prompt.id == prompt_id, Prompt.workspace_id == workspace_id)
         )
@@ -100,6 +103,7 @@ class ResourceService:
         description: str,
         cases: list[TestCaseInput],
     ) -> Dataset:
+        ensure_writable()
         dataset = db.scalar(
             select(Dataset)
             .options(selectinload(Dataset.versions))
@@ -145,6 +149,7 @@ class ResourceService:
         actor_id: uuid.UUID,
         dataset_id: uuid.UUID,
     ) -> None:
+        ensure_writable()
         dataset = db.scalar(
             select(Dataset).where(Dataset.id == dataset_id, Dataset.workspace_id == workspace_id)
         )
@@ -165,6 +170,7 @@ class ResourceService:
         description: str,
         maximum_budget: float | None,
     ) -> Experiment:
+        ensure_writable()
         experiment = db.scalar(
             select(Experiment).where(
                 Experiment.id == experiment_id, Experiment.workspace_id == workspace_id
@@ -190,6 +196,7 @@ class ResourceService:
         actor_id: uuid.UUID,
         experiment_id: uuid.UUID,
     ) -> None:
+        ensure_writable()
         experiment = db.scalar(
             select(Experiment)
             .options(selectinload(Experiment.runs), selectinload(Experiment.models))
@@ -235,6 +242,7 @@ class ResourceService:
         actor_id: uuid.UUID,
         report_id: uuid.UUID,
     ) -> None:
+        ensure_writable()
         report = db.scalar(
             select(Report)
             .join(Experiment)

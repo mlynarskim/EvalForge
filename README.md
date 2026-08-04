@@ -26,6 +26,7 @@ The application is written primarily in Python. It combines FastAPI, NiceGUI, SQ
 * HTML, PDF, CSV, and JSON reports with checksums
 * Structured audit records with recursive secret redaction
 * Twenty case customer support demonstration dataset and an explicitly labelled demonstration report
+* Read only public showcase mode for safe portfolio deployments
 
 ## Screenshots
 
@@ -131,6 +132,14 @@ evalforge-worker
 
 Production startup refuses to initialize secret encryption without an explicit `ENCRYPTION_KEY`. Generate a Fernet key with the initialization script or an equivalent trusted secret manager.
 
+Set `SHOWCASE_MODE=true` for a public portfolio deployment. This disables registration, provider credentials, model synchronization, content mutations, experiment execution, reviews, report generation, and deletion while keeping the seeded demonstration available for exploration.
+
+## Railway deployment
+
+The portfolio deployment uses separate app and worker services with Railway PostgreSQL and Redis. Service configuration is stored in `.railway`, and the complete setup guide is available in [docs/deployment-railway.md](docs/deployment-railway.md).
+
+Only the app receives a public domain. The worker and both data services communicate privately. Railway secrets must be configured in the platform and must never be committed.
+
 ## Provider configuration
 
 Open **Providers**, select the key action for a provider, save the credential, and test the connection. Then synchronize models. Ollama does not require an API key; set its base URL when it differs from `http://host.docker.internal:11434/v1`.
@@ -229,4 +238,4 @@ The first release uses one active workspace per UI session, manual exchange rate
 
 ## License
 
-No license has been selected. Add an appropriate license before public distribution.
+EvalForge is available under the [MIT License](LICENSE).

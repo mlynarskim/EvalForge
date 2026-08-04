@@ -6,7 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.dependencies import WorkspaceContext, require_roles, workspace_context
+from app.api.dependencies import (
+    WorkspaceContext,
+    require_roles,
+    require_writable,
+    workspace_context,
+)
 from app.database import get_db
 from app.models import Experiment, ExperimentRun, ManualReview
 from app.models.entities import ExperimentStatus, Role
@@ -43,7 +48,7 @@ def list_experiments(
     ]
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=[Depends(require_writable)])
 def create_experiment(
     payload: ExperimentCreate,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN, Role.MEMBER)),
@@ -60,7 +65,7 @@ def create_experiment(
     return {"id": experiment.id, "status": experiment.status}
 
 
-@router.post("/{experiment_id}/run", status_code=202)
+@router.post("/{experiment_id}/run", status_code=202, dependencies=[Depends(require_writable)])
 def run_experiment(
     experiment_id: uuid.UUID,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN, Role.MEMBER)),
@@ -85,7 +90,7 @@ def run_experiment(
     return {"job_id": job_id, "run_count": run_count, "status": "queued"}
 
 
-@router.post("/{experiment_id}/cancel")
+@router.post("/{experiment_id}/cancel", dependencies=[Depends(require_writable)])
 def cancel_experiment(
     experiment_id: uuid.UUID,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN, Role.MEMBER)),
@@ -160,7 +165,7 @@ def experiment_details(
     }
 
 
-@router.put("/runs/{run_id}/review")
+@router.put("/runs/{run_id}/review", dependencies=[Depends(require_writable)])
 def review_run(
     run_id: uuid.UUID,
     payload: ManualReviewCreate,

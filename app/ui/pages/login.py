@@ -33,9 +33,11 @@ def register() -> None:
             ui.label(t("subtitle")).classes("ef-muted text-center mb-6")
             with ui.card().classes("ef-card w-full max-w-md p-2"):
                 tabs = ui.tabs().classes("w-full")
+                register_tab = None
                 with tabs:
                     sign_in_tab = ui.tab(t("login"), icon="login")
-                    register_tab = ui.tab(t("register"), icon="person_add")
+                    if not settings.showcase_mode:
+                        register_tab = ui.tab(t("register"), icon="person_add")
                 with ui.tab_panels(tabs, value=sign_in_tab).classes("w-full"):
                     with ui.tab_panel(sign_in_tab):
                         email = ui.input(t("email")).props("outlined type=email").classes("w-full")
@@ -66,33 +68,36 @@ def register() -> None:
                                 ui.label(t("demo_credentials")).classes("font-semibold")
                                 ui.label(settings.demo_admin_email).classes("text-sm")
                                 ui.label(settings.demo_admin_password).classes("text-sm font-mono")
-                    with ui.tab_panel(register_tab):
-                        display_name = ui.input(t("name")).props("outlined").classes("w-full")
-                        new_email = (
-                            ui.input(t("email")).props("outlined type=email").classes("w-full")
-                        )
-                        new_password = (
-                            ui.input(t("password"), password=True, password_toggle_button=True)
-                            .props("outlined")
-                            .classes("w-full")
-                        )
+                                if settings.showcase_mode:
+                                    ui.label(t("showcase_read_only")).classes("text-xs mt-2")
+                    if register_tab is not None:
+                        with ui.tab_panel(register_tab):
+                            display_name = ui.input(t("name")).props("outlined").classes("w-full")
+                            new_email = (
+                                ui.input(t("email")).props("outlined type=email").classes("w-full")
+                            )
+                            new_password = (
+                                ui.input(t("password"), password=True, password_toggle_button=True)
+                                .props("outlined")
+                                .classes("w-full")
+                            )
 
-                        def submit_registration() -> None:
-                            try:
-                                with SessionLocal() as db:
-                                    user, _ = auth_service.register(
-                                        db,
-                                        new_email.value,
-                                        new_password.value,
-                                        display_name.value,
-                                        app.storage.user.get("language", "en"),
-                                    )
-                                app.storage.user["user_id"] = str(user.id)
-                                ui.notify(t("account_created"), type="positive")
-                                ui.navigate.to("/dashboard")
-                            except (AuthenticationError, ValueError) as exc:
-                                ui.notify(str(exc), type="negative")
+                            def submit_registration() -> None:
+                                try:
+                                    with SessionLocal() as db:
+                                        user, _ = auth_service.register(
+                                            db,
+                                            new_email.value,
+                                            new_password.value,
+                                            display_name.value,
+                                            app.storage.user.get("language", "en"),
+                                        )
+                                    app.storage.user["user_id"] = str(user.id)
+                                    ui.notify(t("account_created"), type="positive")
+                                    ui.navigate.to("/dashboard")
+                                except (AuthenticationError, ValueError) as exc:
+                                    ui.notify(str(exc), type="negative")
 
-                        ui.button(
-                            t("register"), icon="person_add", on_click=submit_registration
-                        ).props("unelevated").classes("w-full mt-3")
+                            ui.button(
+                                t("register"), icon="person_add", on_click=submit_registration
+                            ).props("unelevated").classes("w-full mt-3")
