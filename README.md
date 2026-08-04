@@ -6,6 +6,16 @@ EvalForge is a local first application for testing, comparing, and selecting lan
 
 The application is written primarily in Python. It combines FastAPI, NiceGUI, SQLAlchemy, PostgreSQL, Redis, and RQ in a modular architecture intended for continued product development rather than a UI only prototype.
 
+## Live demo
+
+[![Open Live Demo](https://img.shields.io/badge/Live_Demo-Open_EvalForge-635BFF?style=for-the-badge)](https://evalforge-imwj.onrender.com/)
+
+The hosted portfolio instance runs in read only showcase mode. Registration, provider credentials, experiment execution, and data mutations are disabled, while the complete seeded demonstration remains available for exploration.
+
+The sign in page displays the public demonstration credentials.
+
+The free hosting instance may need up to a minute to wake after a period without traffic.
+
 ## Highlights
 
 * English and Polish interface selected inside the application
@@ -134,9 +144,11 @@ Production startup refuses to initialize secret encryption without an explicit `
 
 Set `SHOWCASE_MODE=true` for a public portfolio deployment. This disables registration, provider credentials, model synchronization, content mutations, experiment execution, reviews, report generation, and deletion while keeping the seeded demonstration available for exploration.
 
-## Railway deployment
+## Deployment
 
-The portfolio deployment uses separate app and worker services with Railway PostgreSQL and Redis. Service configuration is stored in `.railway`, and the complete setup guide is available in [docs/deployment-railway.md](docs/deployment-railway.md).
+The public portfolio instance uses a Render web service with Neon PostgreSQL. It intentionally omits the worker and Redis because showcase mode disables experiment execution.
+
+For a full production style deployment, the repository also includes configuration for separate app and worker services with Railway PostgreSQL and Redis. Service configuration is stored in `.railway`, and the complete setup guide is available in [docs/deployment-railway.md](docs/deployment-railway.md).
 
 Only the app receives a public domain. The worker and both data services communicate privately. Railway secrets must be configured in the platform and must never be committed.
 
