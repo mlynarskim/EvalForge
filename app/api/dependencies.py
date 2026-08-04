@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models import User, Workspace, WorkspaceMember
 from app.models.entities import Role
 from app.services.auth_service import AuthenticationError, auth_service
+from app.services.showcase_service import ShowcaseModeError, ensure_writable
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -61,3 +62,10 @@ def require_roles(*roles: Role) -> Callable[[WorkspaceContext], WorkspaceContext
         return context
 
     return dependency
+
+
+def require_writable() -> None:
+    try:
+        ensure_writable()
+    except ShowcaseModeError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc

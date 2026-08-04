@@ -1,0 +1,16 @@
+.env
+.git
+.github
+.mypy_cache
+.nicegui
+.pytest_cache
+.ruff_cache
+.venv
+__pycache__
+*.pyc
+.coverage
+htmlcov
+reports
+tests
+docs
+sample_data

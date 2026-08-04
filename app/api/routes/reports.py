@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import WorkspaceContext, workspace_context
+from app.api.dependencies import WorkspaceContext, require_writable, workspace_context
 from app.database import get_db
 from app.models import Experiment, Report
 from app.services.audit_service import audit
@@ -17,7 +17,11 @@ from app.services.report_service import report_service
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-@router.post("/experiments/{experiment_id}", status_code=201)
+@router.post(
+    "/experiments/{experiment_id}",
+    status_code=201,
+    dependencies=[Depends(require_writable)],
+)
 def generate_report(
     experiment_id: uuid.UUID,
     format: str = "pdf",

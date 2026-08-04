@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     session_secret: str = "local-development-session-secret-change-me"
     encryption_key: str | None = None
     demo_mode: bool = True
+    showcase_mode: bool = False
     demo_admin_email: str = "demo@evalforge.dev"
     demo_admin_password: str = "ChangeMe123!"
     default_language: Literal["en", "pl"] = "en"
@@ -31,6 +32,17 @@ class Settings(BaseSettings):
     max_upload_mb: int = Field(default=10, ge=1, le=100)
     max_prompt_length: int = Field(default=100_000, ge=1_000, le=1_000_000)
     report_directory: Path = Path("reports")
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_postgres_driver(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+psycopg://", 1)
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+        return value
 
     @field_validator("session_secret")
     @classmethod

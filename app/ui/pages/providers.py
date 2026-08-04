@@ -5,6 +5,7 @@ import uuid
 from nicegui import ui
 from sqlalchemy import select
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models import LLMModel, Provider, ProviderCredential
 from app.providers import ProviderError, ProviderRegistry
@@ -149,13 +150,18 @@ def register() -> None:
                                     ui.notify(str(exc), type="negative")
 
                         with ui.row().classes("w-full gap-2"):
-                            ui.button(t("save"), icon="key", on_click=configure).props("outline")
-                            ui.button(icon="wifi_tethering", on_click=test).props(
-                                f"flat aria-label={t('test_connection')}"
-                            )
-                            ui.button(icon="sync", on_click=sync).props(
-                                f"flat aria-label={t('sync')}"
-                            )
+                            if settings.showcase_mode:
+                                ui.label(t("showcase_read_only")).classes("text-sm ef-muted")
+                            else:
+                                ui.button(t("save"), icon="key", on_click=configure).props(
+                                    "outline"
+                                )
+                                ui.button(icon="wifi_tethering", on_click=test).props(
+                                    f"flat aria-label={t('test_connection')}"
+                                )
+                                ui.button(icon="sync", on_click=sync).props(
+                                    f"flat aria-label={t('sync')}"
+                                )
 
     @ui.page("/models")
     def models_page() -> None:

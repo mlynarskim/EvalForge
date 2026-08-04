@@ -97,6 +97,11 @@ def page_frame(title_key: str) -> Iterator[User]:
         ui.badge("DEMO", color="amber") if user.is_demo else None
         ui.button(icon="logout", on_click=logout).props(f"flat round aria-label={t('logout')}")
     with ui.column().classes("ef-page w-full gap-6"):
+        if settings.showcase_mode:
+            with ui.card().classes("ef-demo w-full p-4 shadow-none"):
+                with ui.row().classes("items-center gap-3"):
+                    ui.icon("visibility", color="amber")
+                    ui.label(t("showcase_banner")).classes("font-medium")
         with ui.row().classes("w-full items-center"):
             with ui.column().classes("gap-0"):
                 ui.label(t(title_key)).classes("text-3xl font-bold tracking-tight")

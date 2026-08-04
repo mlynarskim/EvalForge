@@ -6,7 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.dependencies import WorkspaceContext, require_roles, workspace_context
+from app.api.dependencies import (
+    WorkspaceContext,
+    require_roles,
+    require_writable,
+    workspace_context,
+)
 from app.database import get_db
 from app.models import LLMModel, ModelPricing, Provider
 from app.models.entities import Role
@@ -65,7 +70,7 @@ def list_models(
     ]
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=[Depends(require_writable)])
 def add_manual_model(
     payload: ManualModelCreate,
     context: WorkspaceContext = Depends(require_roles(Role.ADMIN, Role.MEMBER)),
@@ -87,7 +92,7 @@ def add_manual_model(
     return {"id": model.id, "model_id": model.model_id}
 
 
-@router.patch("/{model_id}/active")
+@router.patch("/{model_id}/active", dependencies=[Depends(require_writable)])
 def set_model_active(
     model_id: uuid.UUID,
     active: bool,
@@ -102,7 +107,7 @@ def set_model_active(
     return {"is_active": active}
 
 
-@router.post("/{model_id}/pricing", status_code=201)
+@router.post("/{model_id}/pricing", status_code=201, dependencies=[Depends(require_writable)])
 def add_pricing(
     model_id: uuid.UUID,
     payload: PricingCreate,
