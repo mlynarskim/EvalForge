@@ -8,6 +8,8 @@ body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
 .ef-stat { min-height: 128px; min-width: 0; }
 .ef-stat-value { overflow-wrap: anywhere; line-height: 1.15; }
 .ef-muted { color: #667085; }
+.ef-header { background: #ffffff !important; color: #0f172a !important; border-bottom-color: #e2e8f0 !important; }
+body.body--dark .ef-header { background: #111827 !important; color: #ffffff !important; border-bottom-color: #1e293b !important; }
 .ef-brand-mark { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #635bff; color: white; font-weight: 800; }
 .ef-nav .q-item { border-radius: 10px; margin: 3px 8px; }
 .ef-nav .q-router-link--active { background: rgba(99,91,255,.10); color: #635bff; }

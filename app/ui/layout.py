@@ -82,9 +82,7 @@ def page_frame(title_key: str) -> Iterator[User]:
             with ui.column().classes("gap-0"):
                 ui.label(user.display_name).classes("text-sm font-medium")
                 ui.label(user.email).classes("text-xs ef-muted")
-    with ui.header().classes(
-        "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 h-16"
-    ):
+    with ui.header().classes("ef-header border-b h-16"):
         ui.button(icon="menu", on_click=drawer.toggle).props("flat round aria-label=Menu")
         ui.label(t(title_key)).classes("text-lg font-semibold")
         ui.space()
