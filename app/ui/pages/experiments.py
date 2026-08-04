@@ -21,6 +21,8 @@ from app.services.experiment_service import experiment_service
 from app.services.metrics_service import metrics_service
 from app.services.queue_service import QueueUnavailableError, enqueue_experiment
 from app.services.recommendation_service import recommendation_service
+from app.services.resource_service import resource_service
+from app.ui.components import confirmation_dialog
 from app.ui.i18n import t
 from app.ui.layout import page_frame, require_user, workspace_for_user
 
@@ -171,44 +173,122 @@ def register() -> None:
             with ui.card().classes("ef-card p-0 w-full"):
                 if not experiments:
                     ui.label(t("no_data")).classes("p-8 ef-muted")
-                for experiment_row in experiments:
+
+                def render_experiment_row(experiment_item: Experiment) -> None:
+                    edit_dialog = ui.dialog()
+                    with edit_dialog, ui.card().classes("w-[620px] max-w-full p-5"):
+                        ui.label(t("edit_experiment")).classes("text-xl font-semibold")
+                        edit_name = (
+                            ui.input(t("name"), value=experiment_item.name)
+                            .props("outlined")
+                            .classes("w-full")
+                        )
+                        edit_description = (
+                            ui.textarea(t("description"), value=experiment_item.description)
+                            .props("outlined autogrow")
+                            .classes("w-full")
+                        )
+                        edit_budget = (
+                            ui.number(
+                                t("maximum_budget"),
+                                value=experiment_item.maximum_budget,
+                                min=0.01,
+                                step=1,
+                            )
+                            .props("outlined")
+                            .classes("w-full")
+                        )
+
+                        def save_experiment() -> None:
+                            try:
+                                with SessionLocal() as action_db:
+                                    resource_service.update_experiment(
+                                        action_db,
+                                        workspace.id,
+                                        user.id,
+                                        experiment_item.id,
+                                        name=edit_name.value or "",
+                                        description=edit_description.value or "",
+                                        maximum_budget=edit_budget.value,
+                                    )
+                                edit_dialog.close()
+                                ui.notify(t("saved"), type="positive")
+                                ui.navigate.reload()
+                            except ValueError as exc:
+                                ui.notify(str(exc), type="negative")
+
+                        with ui.row().classes("w-full justify-end"):
+                            ui.button(t("cancel"), on_click=edit_dialog.close).props("flat")
+                            ui.button(t("save"), icon="save", on_click=save_experiment).props(
+                                "unelevated"
+                            )
+
+                    def delete_experiment() -> None:
+                        try:
+                            with SessionLocal() as action_db:
+                                resource_service.delete_experiment(
+                                    action_db, workspace.id, user.id, experiment_item.id
+                                )
+                            ui.notify(t("deleted"), type="positive")
+                            ui.navigate.reload()
+                        except ValueError as exc:
+                            ui.notify(str(exc), type="negative")
+
+                    delete_dialog = confirmation_dialog(
+                        t("delete_experiment_title"),
+                        t("delete_experiment_message"),
+                        delete_experiment,
+                    )
                     with ui.row().classes(
                         "w-full items-center px-5 py-4 border-b border-slate-100 dark:border-slate-800"
                     ):
                         ui.icon("science", color="primary", size="28px")
                         with ui.column().classes("gap-0"):
                             with ui.row().classes("items-center gap-2"):
-                                ui.label(experiment_row.name).classes("font-semibold")
-                                ui.badge("DEMO", color="amber") if experiment_row.is_demo else None
-                            ui.label(experiment_row.created_at.strftime("%Y.%m.%d %H:%M")).classes(
+                                ui.label(experiment_item.name).classes("font-semibold")
+                                ui.badge("DEMO", color="amber") if experiment_item.is_demo else None
+                            ui.label(experiment_item.created_at.strftime("%Y.%m.%d %H:%M")).classes(
                                 "text-xs ef-muted"
                             )
                         ui.space()
-                        ui.linear_progress(experiment_row.progress / 100, color="primary").classes(
+                        ui.linear_progress(experiment_item.progress / 100, color="primary").classes(
                             "w-32"
                         )
                         ui.badge(
-                            experiment_row.status.value.replace("_", " "),
-                            color="green" if "completed" in experiment_row.status.value else "blue",
+                            experiment_item.status.value.replace("_", " "),
+                            color="green"
+                            if "completed" in experiment_item.status.value
+                            else "blue",
                         )
 
-                        def view(experiment_id: uuid.UUID = experiment_row.id) -> None:
-                            ui.navigate.to(f"/experiments/{experiment_id}")
+                        def view() -> None:
+                            ui.navigate.to(f"/experiments/{experiment_item.id}")
 
                         ui.button(t("view"), icon="arrow_forward", on_click=view).props("flat")
-                        if experiment_row.status.value in {"draft", "paused"}:
+                        ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
+                            "flat round"
+                        )
+                        ui.button(icon="delete", on_click=delete_dialog.open).props(
+                            f"flat round color=negative aria-label={t('delete')}"
+                        )
+                        if experiment_item.status.value in {"draft", "paused"}:
 
-                            def run(experiment_id: uuid.UUID = experiment_row.id) -> None:
+                            def run() -> None:
                                 try:
                                     with SessionLocal() as action_db:
-                                        experiment_service.prepare_runs(action_db, experiment_id)
-                                    enqueue_experiment(experiment_id)
+                                        experiment_service.prepare_runs(
+                                            action_db, experiment_item.id
+                                        )
+                                    enqueue_experiment(experiment_item.id)
                                     ui.notify(t("queued"), type="positive")
                                     ui.navigate.reload()
                                 except (ValueError, QueueUnavailableError) as exc:
                                     ui.notify(str(exc), type="negative")
 
                             ui.button(t("run"), icon="play_arrow", on_click=run).props("unelevated")
+
+                for experiment_item in experiments:
+                    render_experiment_row(experiment_item)
 
     @ui.page("/experiments/{experiment_id}")
     def experiment_details_page(experiment_id: str) -> None:
