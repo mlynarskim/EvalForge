@@ -50,10 +50,22 @@ body.body--dark .ef-product-preview { background: linear-gradient(145deg, #1f293
 .ef-legal-title { font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.05; letter-spacing: -.04em; font-weight: 850; }
 .ef-legal-section { display: flex; flex-direction: column; gap: 9px; }
 .ef-legal-paragraph { color: #667085; line-height: 1.75; font-size: 1.02rem; white-space: normal; }
+.ef-demo-shell { width: min(1240px, calc(100% - 40px)); margin: 0 auto; padding: 64px 0 90px; gap: 40px; }
+.ef-demo-title { font-size: clamp(2.5rem, 5vw, 4.25rem); line-height: 1.03; letter-spacing: -.04em; font-weight: 850; }
+.ef-demo-builder-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr); gap: 24px; width: 100%; align-items: start; }
+.ef-demo-results-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; width: 100%; }
+.ef-model-result { min-width: 0; }
+.ef-model-recommended { border: 2px solid rgba(34,197,94,.55); background: rgba(34,197,94,.04); }
+.ef-model-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; width: 100%; margin-top: 16px; }
+.ef-recommendation-card { background: linear-gradient(135deg, rgba(34,197,94,.10), rgba(99,91,255,.06)); }
+.ef-answer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; width: 100%; }
+.ef-demo-shell .q-table td { white-space: normal; min-width: 130px; }
 .nicegui-content { padding: 0; }
 @media (max-width: 900px) { .ef-page { padding: 18px 14px 36px; } }
 @media (max-width: 860px) { .ef-hero { grid-template-columns: 1fr; min-height: auto; padding: 64px 0; gap: 44px; } .ef-product-preview { max-width: 620px; transform: none; } .ef-feature-grid, .ef-steps-grid { grid-template-columns: 1fr; } .ef-public-section { padding: 64px 0; } }
+@media (max-width: 900px) { .ef-demo-builder-grid { grid-template-columns: 1fr; } .ef-demo-results-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .ef-hero, .ef-public-section, .ef-public-footer, .ef-legal { width: min(100% - 28px, 1180px); } .ef-hero { padding: 46px 0 54px; } .ef-hero-title { font-size: 2.55rem; } .ef-product-preview { padding: 18px; } .ef-preview-grid { grid-template-columns: 1fr; } .ef-public-header { padding-left: 14px !important; padding-right: 8px !important; } .ef-public-header .ef-brand-mark { width: 30px; height: 30px; } .ef-public-header .text-xl { display: none; } .ef-feature-card { padding: 20px; } .ef-public-footer { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 560px) { .ef-demo-shell { width: min(100% - 28px, 1240px); padding: 42px 0 64px; } .ef-demo-title { font-size: 2.45rem; } .ef-answer-grid { grid-template-columns: 1fr; } .ef-demo-back .q-icon { margin-right: 0; } .ef-demo-back .q-btn__content > span:not(.q-icon) { display: none; } }
 @container (max-width: 1200px) { .ef-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @container (max-width: 900px) { .ef-card-grid, .ef-onboarding-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ef-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container (max-width: 720px) { .ef-charts-grid { grid-template-columns: minmax(0, 1fr); } }

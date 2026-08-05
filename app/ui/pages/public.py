@@ -6,17 +6,17 @@ from typing import cast
 from nicegui import app, ui
 
 from app.config import settings
-from app.ui.session import enter_demo
 from app.ui.theme import apply_theme
 
 COPY: dict[str, dict[str, object]] = {
     "en": {
         "sign_in": "Sign in",
+        "header_demo": "Try demo",
         "demo": "Explore the live demo",
         "eyebrow": "Reproducible LLM evaluation",
         "hero_title": "Choose the right language model with evidence, not guesswork.",
         "hero_body": "Run the same prompts and test cases across providers. Compare quality, cost, latency and regressions in one clear workspace.",
-        "demo_note": "No account or API key required. The public demo is safe and read only.",
+        "demo_note": "No account or API key required. Results are simulated and nothing you enter is stored.",
         "value_title": "A decision workspace for teams shipping with AI",
         "value_body": "EvalForge turns scattered model tests into a repeatable process that can be reviewed, compared and shared.",
         "features": [
@@ -47,11 +47,12 @@ COPY: dict[str, dict[str, object]] = {
     },
     "pl": {
         "sign_in": "Zaloguj się",
+        "header_demo": "Demo",
         "demo": "Otwórz demo na żywo",
         "eyebrow": "Powtarzalna ocena modeli językowych",
         "hero_title": "Wybierz właściwy model na podstawie dowodów, a nie przypuszczeń.",
         "hero_body": "Uruchamiaj te same prompty i przypadki testowe u wielu dostawców. Porównuj jakość, koszt, czas odpowiedzi i regresje w jednym miejscu.",
-        "demo_note": "Bez konta i klucza API. Publiczne demo jest bezpieczne i tylko do odczytu.",
+        "demo_note": "Bez konta i klucza API. Wyniki są symulowane, a wpisane dane nie są zapisywane.",
         "value_title": "Miejsce podejmowania decyzji dla zespołów tworzących rozwiązania AI",
         "value_body": "EvalForge zmienia rozproszone testy modeli w powtarzalny proces, który można sprawdzić, porównać i udostępnić.",
         "features": [
@@ -126,7 +127,7 @@ LEGAL: dict[str, dict[str, tuple[str, list[tuple[str, str]]]]] = {
             [
                 (
                     "Public demonstration",
-                    "EvalForge is currently provided as a free, read only product demonstration. Public registration, provider credentials, experiment execution and data changes are disabled.",
+                    "EvalForge is currently provided as a free interactive product demonstration. It uses deterministic simulated results and does not call provider APIs. Public registration, provider credentials and persistent visitor data are disabled.",
                 ),
                 (
                     "Acceptable use",
@@ -198,7 +199,7 @@ LEGAL: dict[str, dict[str, tuple[str, list[tuple[str, str]]]]] = {
             [
                 (
                     "Publiczna prezentacja",
-                    "EvalForge jest obecnie bezpłatną prezentacją produktu tylko do odczytu. Publiczna rejestracja, klucze dostawców, uruchamianie eksperymentów oraz zmiany danych są wyłączone.",
+                    "EvalForge jest obecnie bezpłatną interaktywną prezentacją produktu. Korzysta z deterministycznych wyników symulowanych i nie wywołuje API dostawców. Publiczna rejestracja, klucze dostawców i trwały zapis danych odwiedzających są wyłączone.",
                 ),
                 (
                     "Dozwolone korzystanie",
@@ -260,9 +261,16 @@ def _public_header() -> None:
                 ui.navigate.reload()
 
             language.on_value_change(change_language)
-            ui.button(str(copy["sign_in"]), on_click=lambda: ui.navigate.to("/login")).props(
-                "flat no-caps"
-            ).classes("ef-public-sign-in")
+            if settings.showcase_mode:
+                ui.button(
+                    str(copy["header_demo"]),
+                    icon="play_arrow",
+                    on_click=lambda: ui.navigate.to("/demo"),
+                ).props("flat no-caps").classes("ef-public-sign-in")
+            else:
+                ui.button(str(copy["sign_in"]), on_click=lambda: ui.navigate.to("/login")).props(
+                    "flat no-caps"
+                ).classes("ef-public-sign-in")
 
 
 def _footer() -> None:
@@ -301,13 +309,16 @@ def register() -> None:
                         with ui.row().classes("gap-3 flex-wrap mt-3"):
                             if settings.demo_mode:
                                 ui.button(
-                                    str(copy["demo"]), icon="play_arrow", on_click=enter_demo
+                                    str(copy["demo"]),
+                                    icon="play_arrow",
+                                    on_click=lambda: ui.navigate.to("/demo"),
                                 ).props("unelevated no-caps size=lg")
-                            ui.button(
-                                str(copy["sign_in"]),
-                                icon="login",
-                                on_click=lambda: ui.navigate.to("/login"),
-                            ).props("outline no-caps size=lg")
+                            if not settings.showcase_mode:
+                                ui.button(
+                                    str(copy["sign_in"]),
+                                    icon="login",
+                                    on_click=lambda: ui.navigate.to("/login"),
+                                ).props("outline no-caps size=lg")
                         ui.label(str(copy["demo_note"])).classes("ef-muted text-sm mt-2")
                     with ui.card().classes("ef-product-preview ef-card"):
                         ui.label("EvalForge").classes("text-lg font-bold")

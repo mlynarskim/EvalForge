@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     encryption_key: str | None = None
     demo_mode: bool = True
     showcase_mode: bool = False
+    registration_enabled: bool = False
     demo_admin_email: str = "demo@evalforge.dev"
     demo_admin_password: str = "ChangeMe123!"
     default_language: Literal["en", "pl"] = "en"

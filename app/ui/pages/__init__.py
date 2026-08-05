@@ -1,6 +1,7 @@
 from app.ui.pages import (
     content,
     dashboard,
+    demo,
     experiments,
     login,
     providers,
@@ -12,6 +13,7 @@ from app.ui.pages import (
 
 def register_pages() -> None:
     public.register()
+    demo.register()
     login.register()
     dashboard.register()
     providers.register()

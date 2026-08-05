@@ -38,7 +38,8 @@ The free hosting instance may need up to a minute to wake after a period without
 * Twenty case customer support demonstration dataset and an explicitly labelled demonstration report
 * Read only public showcase mode for safe portfolio deployments
 * Public landing page with bilingual Privacy Policy and Terms of Use
-* One click demonstration access without exposing a shared password
+* Interactive simulated experiment with scenarios, editable prompts, deterministic model comparisons, case level answers, recommendations, charts, and a downloadable report
+* One click demonstration access without an account, shared password, provider key, external API call, or persisted visitor input
 * API request limiting and production security headers
 
 ## Screenshots
@@ -136,6 +137,7 @@ evalforge-worker
 | `SESSION_SECRET` | Signs sessions and API access tokens | local development value |
 | `ENCRYPTION_KEY` | Fernet key for provider credentials | derived only outside production |
 | `DEMO_MODE` | Creates safe demonstration content | `true` |
+| `REGISTRATION_ENABLED` | Enables creation of new accounts | `false` |
 | `DEFAULT_LANGUAGE` | Initial interface language, `en` or `pl` | `en` |
 | `DEFAULT_CURRENCY` | `PLN`, `USD`, or `EUR` | `PLN` |
 | `USD_TO_PLN` | Manual USD conversion rate | `4.00` |
@@ -149,7 +151,9 @@ evalforge-worker
 
 Production startup refuses to initialize secret encryption without an explicit `ENCRYPTION_KEY`. Generate a Fernet key with the initialization script or an equivalent trusted secret manager.
 
-Set `SHOWCASE_MODE=true` for a public portfolio deployment. This disables registration, provider credentials, model synchronization, content mutations, experiment execution, reviews, report generation, and deletion while keeping the seeded demonstration available for exploration.
+Set `SHOWCASE_MODE=true` for a public portfolio deployment. This disables provider credentials, model synchronization, persistent content mutations, real experiment execution, reviews, report persistence, and deletion. The separate interactive demonstration remains available with deterministic simulated results and no external provider calls.
+
+Public registration is disabled by default independently of showcase mode. Keep `REGISTRATION_ENABLED=false` until account verification, password recovery, tenant isolation, data lifecycle controls, and operational monitoring are ready.
 
 ## Deployment
 

@@ -4,7 +4,6 @@ from app.config import settings
 from app.database import SessionLocal
 from app.services.auth_service import AuthenticationError, auth_service
 from app.ui.i18n import t
-from app.ui.session import enter_demo
 from app.ui.theme import apply_theme
 
 
@@ -37,9 +36,11 @@ def register() -> None:
                     with ui.card().classes("ef-demo w-full p-4 shadow-none"):
                         ui.label(t("demo_credentials")).classes("font-semibold")
                         ui.label(t("demo_access_help")).classes("text-sm ef-muted")
-                        ui.button(t("enter_demo"), icon="play_arrow", on_click=enter_demo).props(
-                            "unelevated no-caps"
-                        ).classes("w-full mt-2")
+                        ui.button(
+                            t("enter_demo"),
+                            icon="play_arrow",
+                            on_click=lambda: ui.navigate.to("/demo"),
+                        ).props("unelevated no-caps").classes("w-full mt-2")
                         if settings.showcase_mode:
                             ui.label(t("showcase_read_only")).classes("text-xs mt-1")
                 if settings.showcase_mode:
@@ -53,7 +54,7 @@ def register() -> None:
                 register_tab = None
                 with tabs:
                     sign_in_tab = ui.tab(t("login"), icon="login")
-                    if not settings.showcase_mode:
+                    if settings.registration_enabled and not settings.showcase_mode:
                         register_tab = ui.tab(t("register"), icon="person_add")
                 with ui.tab_panels(tabs, value=sign_in_tab).classes("w-full"):
                     with ui.tab_panel(sign_in_tab):
