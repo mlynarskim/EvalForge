@@ -59,6 +59,21 @@ class AuthService:
             raise AuthenticationError("Invalid email or password")
         return user
 
+    def demo_user(self, db: Session) -> User:
+        """Resolve the seeded demo user without exposing or verifying its password."""
+        if not settings.demo_mode:
+            raise AuthenticationError("Demonstration access is unavailable")
+        user = db.scalar(
+            select(User).where(
+                User.email == settings.demo_admin_email.strip().lower(),
+                User.is_demo.is_(True),
+                User.is_active.is_(True),
+            )
+        )
+        if user is None:
+            raise AuthenticationError("Demonstration account is unavailable")
+        return user
+
     def create_token(self, user: User) -> str:
         return self.serializer.dumps({"user_id": str(user.id)})
 

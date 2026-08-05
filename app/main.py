@@ -11,6 +11,7 @@ from nicegui import ui
 from app.api.routes import auth, datasets, experiments, models, prompts, providers, reports
 from app.config import settings
 from app.database import SessionLocal, create_schema
+from app.middleware.security import SecurityMiddleware
 from app.services.demo_service import seed_demo
 from app.ui.pages import register_pages
 
@@ -29,6 +30,7 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+app.add_middleware(SecurityMiddleware, settings=settings)
 
 for router in (
     auth.router,
@@ -49,7 +51,7 @@ def health() -> dict[str, str]:
 
 @app.get("/", include_in_schema=False)
 def home() -> RedirectResponse:
-    return RedirectResponse("/ui/dashboard")
+    return RedirectResponse("/ui/welcome")
 
 
 register_pages()

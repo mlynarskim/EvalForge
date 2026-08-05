@@ -27,3 +27,13 @@ def test_demo_seed_is_idempotent_and_contains_twenty_cases(db) -> None:
     assert experiment is not None
     assert experiment.is_demo is True
     assert experiment.total_cost == 0
+
+
+def test_demo_user_can_be_resolved_without_public_credentials(db) -> None:
+    seed_demo(db)
+
+    user = auth_service.demo_user(db)
+
+    assert user.email == "demo@evalforge.dev"
+    assert user.is_demo is True
+    assert user.is_active is True

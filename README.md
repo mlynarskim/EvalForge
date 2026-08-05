@@ -12,7 +12,7 @@ The application is written primarily in Python. It combines FastAPI, NiceGUI, SQ
 
 The hosted portfolio instance runs in read only showcase mode. Registration, provider credentials, experiment execution, and data mutations are disabled, while the complete seeded demonstration remains available for exploration.
 
-The sign in page displays the public demonstration credentials.
+The landing page opens the safe demonstration with one click. Public credentials are not displayed or required.
 
 The free hosting instance may need up to a minute to wake after a period without traffic.
 
@@ -37,6 +37,9 @@ The free hosting instance may need up to a minute to wake after a period without
 * Structured audit records with recursive secret redaction
 * Twenty case customer support demonstration dataset and an explicitly labelled demonstration report
 * Read only public showcase mode for safe portfolio deployments
+* Public landing page with bilingual Privacy Policy and Terms of Use
+* One click demonstration access without exposing a shared password
+* API request limiting and production security headers
 
 ## Screenshots
 
@@ -139,6 +142,10 @@ evalforge-worker
 | `EUR_TO_PLN` | Manual EUR conversion rate | `4.35` |
 | `MAX_UPLOAD_MB` | Dataset upload limit | `10` |
 | `MAX_PROMPT_LENGTH` | Prompt input limit | `100000` |
+| `RATE_LIMIT_ENABLED` | Enables API request limiting | `true` |
+| `RATE_LIMIT_REQUESTS` | General API requests allowed per window and client address | `120` |
+| `RATE_LIMIT_LOGIN_REQUESTS` | Login attempts allowed per window and client address | `10` |
+| `RATE_LIMIT_WINDOW_SECONDS` | Rate limit window duration | `60` |
 
 Production startup refuses to initialize secret encryption without an explicit `ENCRYPTION_KEY`. Generate a Fernet key with the initialization script or an equivalent trusted secret manager.
 
