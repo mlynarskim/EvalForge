@@ -8,11 +8,13 @@ The application is written primarily in Python. It combines FastAPI, NiceGUI, SQ
 
 ## Live demo
 
-[![Open Live Demo](https://img.shields.io/badge/Live_Demo-Open_EvalForge-635BFF?style=for-the-badge)](https://evalforge-imwj.onrender.com/)
+[![Open Live Demo](https://img.shields.io/badge/Live_Demo-Open_EvalForge-635BFF?style=for-the-badge)](https://evalforge-imwj.onrender.com/ui/login)
 
-The hosted portfolio instance runs in read only showcase mode. Registration, provider credentials, experiment execution, and data mutations are disabled, while the complete seeded demonstration remains available for exploration.
+The hosted portfolio instance runs in read only showcase mode. One click opens the original EvalForge dashboard with a complete seeded comparison of three fictional models across twenty realistic customer support cases.
 
-The landing page opens the safe demonstration with one click. Public credentials are not displayed or required.
+The demonstration includes versioned prompts and datasets, sixty model responses, quality and pass metrics, latency and cost estimates, a weighted recommendation, case level answers, charts, and a downloadable JSON report. Results are deterministic simulations. No provider API is called, no visitor input is stored, and public credentials are not displayed or required.
+
+Public registration, provider credentials, model synchronization, real experiment execution, persistent mutations, and deletion are disabled. API requests and login attempts are rate limited, and production security headers are enabled.
 
 The free hosting instance may need up to a minute to wake after a period without traffic.
 
@@ -35,11 +37,11 @@ The free hosting instance may need up to a minute to wake after a period without
 * Human reviews for individual model responses
 * HTML, PDF, CSV, and JSON reports with checksums
 * Structured audit records with recursive secret redaction
-* Twenty case customer support demonstration dataset and an explicitly labelled demonstration report
+* Twenty case customer support demonstration dataset and sixty simulated model responses
 * Read only public showcase mode for safe portfolio deployments
 * Public landing page with bilingual Privacy Policy and Terms of Use
-* Interactive simulated experiment with scenarios, editable prompts, deterministic model comparisons, case level answers, recommendations, charts, and a downloadable report
-* One click demonstration access without an account, shared password, provider key, external API call, or persisted visitor input
+* Integrated simulated experiment with three fictional models, case level answers, recommendations, charts, and a downloadable report
+* One click demonstration access to the original dashboard without an account, shared password, provider key, external API call, or persisted visitor input
 * API request limiting and production security headers
 
 ## Screenshots
@@ -147,13 +149,14 @@ evalforge-worker
 | `RATE_LIMIT_ENABLED` | Enables API request limiting | `true` |
 | `RATE_LIMIT_REQUESTS` | General API requests allowed per window and client address | `120` |
 | `RATE_LIMIT_LOGIN_REQUESTS` | Login attempts allowed per window and client address | `10` |
+| `RATE_LIMIT_PAGE_REQUESTS` | Dynamic page loads allowed per window and client address | `60` |
 | `RATE_LIMIT_WINDOW_SECONDS` | Rate limit window duration | `60` |
 
 Production startup refuses to initialize secret encryption without an explicit `ENCRYPTION_KEY`. Generate a Fernet key with the initialization script or an equivalent trusted secret manager.
 
-Set `SHOWCASE_MODE=true` for a public portfolio deployment. This disables provider credentials, model synchronization, persistent content mutations, real experiment execution, reviews, report persistence, and deletion. The separate interactive demonstration remains available with deterministic simulated results and no external provider calls.
+Set `SHOWCASE_MODE=true` for a public portfolio deployment. This disables provider credentials, model synchronization, persistent content mutations, real experiment execution, reviews, report persistence, and deletion. Visitors enter the seeded dashboard through the demo button and can replay the deterministic simulation without external provider calls.
 
-Public registration is disabled by default independently of showcase mode. Keep `REGISTRATION_ENABLED=false` until account verification, password recovery, tenant isolation, data lifecycle controls, and operational monitoring are ready.
+Public registration is disabled by default independently of showcase mode. API login is also disabled when showcase mode is active because the portfolio demo uses an internal one click browser session. Keep `REGISTRATION_ENABLED=false` until account verification, password recovery, tenant isolation, data lifecycle controls, and operational monitoring are ready.
 
 ## Deployment
 

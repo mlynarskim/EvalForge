@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import uuid
 
 from nicegui import ui
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import SessionLocal
@@ -29,6 +31,7 @@ def register() -> None:
             experiments = list(
                 db.scalars(
                     select(Experiment)
+                    .options(selectinload(Experiment.runs))
                     .where(
                         Experiment.workspace_id == workspace.id,
                         Experiment.status.in_(
@@ -51,7 +54,43 @@ def register() -> None:
             )
         with page_frame("reports"):
             ui.label(t("report_help")).classes("ef-muted")
-            if not settings.showcase_mode:
+            if settings.showcase_mode:
+                with ui.card().classes("ef-card p-5 w-full"):
+                    ui.label(t("download_demo_report")).classes("text-lg font-semibold")
+                    ui.label(t("demo_report_ready")).classes("ef-muted")
+                    for experiment_item in experiments:
+
+                        def download_report(
+                            selected_experiment_id: uuid.UUID = experiment_item.id,
+                            selected_experiment_name: str = experiment_item.name,
+                        ) -> None:
+                            with SessionLocal() as action_db:
+                                payload = report_service.payload(action_db, selected_experiment_id)
+                            filename = (
+                                selected_experiment_name.lower().replace(" ", "_") + "_report.json"
+                            )
+                            ui.download.content(
+                                json.dumps(payload, indent=2, ensure_ascii=False).encode(),
+                                filename,
+                                "application/json",
+                            )
+
+                        with ui.row().classes(
+                            "w-full items-center p-4 border rounded-xl border-slate-200 dark:border-slate-700"
+                        ):
+                            ui.icon("description", color="primary")
+                            with ui.column().classes("gap-0"):
+                                ui.label(experiment_item.name).classes("font-semibold")
+                                ui.label(
+                                    f"{len(experiment_item.runs)} {t('cases').lower()}  •  {experiment_item.total_cost:.4f} {experiment_item.currency}"
+                                ).classes("text-sm ef-muted")
+                            ui.space()
+                            ui.button(
+                                "JSON",
+                                icon="download",
+                                on_click=download_report,
+                            ).props("outline no-caps")
+            else:
                 with ui.card().classes("ef-card p-5 w-full"):
                     ui.label(t("generate_report")).classes("text-lg font-semibold")
                     experiment_select = (
@@ -95,7 +134,7 @@ def register() -> None:
                         "unelevated"
                     )
             with ui.card().classes("ef-card p-0 w-full"):
-                if not reports:
+                if not reports and not settings.showcase_mode:
                     ui.label(t("no_data")).classes("p-8 ef-muted")
 
                 def render_report_row(report_item: Report) -> None:

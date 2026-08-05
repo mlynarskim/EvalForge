@@ -75,3 +75,8 @@ def require_writable() -> None:
 def require_registration_enabled() -> None:
     if not settings.registration_enabled:
         raise HTTPException(status_code=403, detail="Public registration is disabled")
+
+
+def require_api_login_enabled() -> None:
+    if settings.showcase_mode:
+        raise HTTPException(status_code=403, detail="API login is disabled in public showcase mode")

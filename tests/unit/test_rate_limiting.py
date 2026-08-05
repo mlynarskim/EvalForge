@@ -47,3 +47,29 @@ def test_middleware_limits_login_and_sets_security_headers() -> None:
     assert blocked.headers["x-content-type-options"] == "nosniff"
     assert blocked.headers["x-frame-options"] == "DENY"
     assert blocked.headers["strict-transport-security"] == "max-age=31536000"
+
+
+def test_middleware_limits_dynamic_page_loads() -> None:
+    test_settings = Settings(
+        _env_file=None,
+        app_env="test",
+        session_secret="test-session-secret-with-at-least-thirty-two-characters",
+        rate_limit_page_requests=10,
+        rate_limit_window_seconds=60,
+    )
+    test_app = FastAPI()
+    test_app.add_middleware(SecurityMiddleware, settings=test_settings)
+
+    @test_app.get("/ui/dashboard")
+    def dashboard() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(test_app)
+    headers = {"x-forwarded-for": "203.0.113.20"}
+
+    for _ in range(10):
+        assert client.get("/ui/dashboard", headers=headers).status_code == 200
+    blocked = client.get("/ui/dashboard", headers=headers)
+
+    assert blocked.status_code == 429
+    assert blocked.headers["retry-after"] == "60"

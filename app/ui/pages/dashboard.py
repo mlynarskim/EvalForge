@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from nicegui import ui
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app.database import SessionLocal
 from app.models import EvaluationResult, Experiment, ExperimentRun, LLMModel
+from app.services.metrics_service import metrics_service
 from app.ui.i18n import t
 from app.ui.layout import page_frame, require_user, workspace_for_user
 
@@ -77,6 +79,30 @@ def register() -> None:
                     .limit(8)
                 )
             )
+            completed_runs = list(
+                db.scalars(
+                    select(ExperimentRun)
+                    .options(selectinload(ExperimentRun.evaluations))
+                    .join(Experiment)
+                    .where(
+                        Experiment.workspace_id == workspace.id,
+                        ExperimentRun.status == "completed",
+                    )
+                )
+            )
+            model_names = {
+                str(item.id): item.display_name
+                for item in db.scalars(
+                    select(LLMModel).where(LLMModel.workspace_id == workspace.id)
+                )
+            }
+            model_metrics = metrics_service.aggregate(completed_runs)
+            quality_by_model = [
+                (model_names.get(model_id, model_id), values["quality"])
+                for model_id, values in model_metrics.items()
+            ]
+            quality_by_model.sort(key=lambda item: item[1])
+            demo_experiment = next((item for item in recent if item.is_demo), None)
         with page_frame("dashboard"):
             if user.is_demo:
                 with ui.row().classes("ef-demo w-full items-center p-3"):
@@ -88,12 +114,21 @@ def register() -> None:
                     with ui.column().classes("gap-1"):
                         ui.label(t("get_started")).classes("text-xl font-semibold")
                         ui.label(t("onboarding_intro")).classes("ef-muted")
-                onboarding_steps = [
-                    ("1", t("step_connect_title"), t("step_connect_description")),
-                    ("2", t("step_prepare_title"), t("step_prepare_description")),
-                    ("3", t("step_run_title"), t("step_run_description")),
-                    ("4", t("step_analyze_title"), t("step_analyze_description")),
-                ]
+                if user.is_demo:
+                    ui.label(t("demo_intro")).classes("ef-muted")
+                    onboarding_steps = [
+                        ("1", t("demo_step_models_title"), t("demo_step_models_description")),
+                        ("2", t("demo_step_data_title"), t("demo_step_data_description")),
+                        ("3", t("demo_step_run_title"), t("demo_step_run_description")),
+                        ("4", t("demo_step_report_title"), t("demo_step_report_description")),
+                    ]
+                else:
+                    onboarding_steps = [
+                        ("1", t("step_connect_title"), t("step_connect_description")),
+                        ("2", t("step_prepare_title"), t("step_prepare_description")),
+                        ("3", t("step_run_title"), t("step_run_description")),
+                        ("4", t("step_analyze_title"), t("step_analyze_description")),
+                    ]
                 with ui.element("div").classes("ef-onboarding-grid mt-3"):
                     for number, title, description in onboarding_steps:
                         with ui.column().classes("ef-step gap-2"):
@@ -102,16 +137,28 @@ def register() -> None:
                                 ui.label(title).classes("font-semibold")
                             ui.label(description).classes("ef-muted text-sm")
                 with ui.row().classes("w-full gap-2 mt-2"):
-                    ui.button(
-                        t("open_providers"),
-                        icon="key",
-                        on_click=lambda: ui.navigate.to("/providers"),
-                    ).props("unelevated")
-                    ui.button(
-                        t("open_demo_experiment"),
-                        icon="science",
-                        on_click=lambda: ui.navigate.to("/experiments"),
-                    ).props("outline")
+                    if user.is_demo and demo_experiment is not None:
+                        ui.button(
+                            t("open_demo_experiment"),
+                            icon="science",
+                            on_click=lambda: ui.navigate.to(f"/experiments/{demo_experiment.id}"),
+                        ).props("unelevated")
+                        ui.button(
+                            t("reports"),
+                            icon="description",
+                            on_click=lambda: ui.navigate.to("/reports"),
+                        ).props("outline")
+                    else:
+                        ui.button(
+                            t("open_providers"),
+                            icon="key",
+                            on_click=lambda: ui.navigate.to("/providers"),
+                        ).props("unelevated")
+                        ui.button(
+                            t("open_demo_experiment"),
+                            icon="science",
+                            on_click=lambda: ui.navigate.to("/experiments"),
+                        ).props("outline")
             stats = [
                 (t("total_experiments"), str(experiment_count), "science", "indigo"),
                 (t("completed_runs"), str(run_count), "check_circle", "green"),
@@ -156,12 +203,12 @@ def register() -> None:
                             "xAxis": {"type": "value", "max": 1},
                             "yAxis": {
                                 "type": "category",
-                                "data": ["Demo Support Classifier"] if user.is_demo else [],
+                                "data": [item[0] for item in quality_by_model],
                             },
                             "series": [
                                 {
                                     "type": "bar",
-                                    "data": [quality] if user.is_demo else [],
+                                    "data": [item[1] for item in quality_by_model],
                                     "itemStyle": {"color": "#635BFF", "borderRadius": 6},
                                 }
                             ],

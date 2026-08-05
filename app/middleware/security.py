@@ -69,14 +69,23 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             response.headers["Strict-Transport-Security"] = "max-age=31536000"
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if self.settings.rate_limit_enabled and request.url.path.startswith("/api/"):
-            is_login = request.url.path == "/api/auth/login" and request.method == "POST"
-            group = "login" if is_login else "api"
-            limit = (
-                self.settings.rate_limit_login_requests
-                if is_login
-                else self.settings.rate_limit_requests
-            )
+        is_api = request.url.path.startswith("/api/")
+        is_login = request.url.path == "/api/auth/login" and request.method == "POST"
+        is_page = (
+            request.method == "GET"
+            and request.url.path.startswith("/ui/")
+            and "/_nicegui/" not in request.url.path
+        )
+        if self.settings.rate_limit_enabled and (is_api or is_page):
+            if is_login:
+                group = "login"
+                limit = self.settings.rate_limit_login_requests
+            elif is_page:
+                group = "page"
+                limit = self.settings.rate_limit_page_requests
+            else:
+                group = "api"
+                limit = self.settings.rate_limit_requests
             key = f"{self._client_ip(request)}:{group}"
             decision = self.limiter.check(
                 key, limit=limit, window_seconds=self.settings.rate_limit_window_seconds

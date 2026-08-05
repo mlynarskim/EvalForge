@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_requests: int = Field(default=120, ge=10, le=10_000)
     rate_limit_login_requests: int = Field(default=10, ge=1, le=1_000)
+    rate_limit_page_requests: int = Field(default=60, ge=10, le=10_000)
     rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
     report_directory: Path = Path("reports")
 

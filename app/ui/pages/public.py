@@ -6,6 +6,7 @@ from typing import cast
 from nicegui import app, ui
 
 from app.config import settings
+from app.ui.session import enter_demo
 from app.ui.theme import apply_theme
 
 COPY: dict[str, dict[str, object]] = {
@@ -265,7 +266,7 @@ def _public_header() -> None:
                 ui.button(
                     str(copy["header_demo"]),
                     icon="play_arrow",
-                    on_click=lambda: ui.navigate.to("/demo"),
+                    on_click=enter_demo,
                 ).props("flat no-caps").classes("ef-public-sign-in")
             else:
                 ui.button(str(copy["sign_in"]), on_click=lambda: ui.navigate.to("/login")).props(
@@ -311,7 +312,7 @@ def register() -> None:
                                 ui.button(
                                     str(copy["demo"]),
                                     icon="play_arrow",
-                                    on_click=lambda: ui.navigate.to("/demo"),
+                                    on_click=enter_demo,
                                 ).props("unelevated no-caps size=lg")
                             if not settings.showcase_mode:
                                 ui.button(

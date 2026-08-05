@@ -4,6 +4,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.services.auth_service import AuthenticationError, auth_service
 from app.ui.i18n import t
+from app.ui.session import enter_demo
 from app.ui.theme import apply_theme
 
 
@@ -39,7 +40,7 @@ def register() -> None:
                         ui.button(
                             t("enter_demo"),
                             icon="play_arrow",
-                            on_click=lambda: ui.navigate.to("/demo"),
+                            on_click=enter_demo,
                         ).props("unelevated no-caps").classes("w-full mt-2")
                         if settings.showcase_mode:
                             ui.label(t("showcase_read_only")).classes("text-xs mt-1")

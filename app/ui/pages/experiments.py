@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
 
 from nicegui import ui
@@ -12,6 +14,7 @@ from app.models import (
     Dataset,
     DatasetVersion,
     Experiment,
+    ExperimentModel,
     ExperimentRun,
     LLMModel,
     Prompt,
@@ -22,10 +25,28 @@ from app.services.experiment_service import experiment_service
 from app.services.metrics_service import metrics_service
 from app.services.queue_service import QueueUnavailableError, enqueue_experiment
 from app.services.recommendation_service import recommendation_service
+from app.services.report_service import report_service
 from app.services.resource_service import resource_service
 from app.ui.components import confirmation_dialog
 from app.ui.i18n import t
 from app.ui.layout import page_frame, require_user, workspace_for_user
+
+
+async def _replay_simulation(experiment_id: uuid.UUID) -> None:
+    dialog = ui.dialog().props("persistent")
+    with dialog, ui.card().classes("w-[520px] max-w-full p-6"):
+        ui.icon("science", color="primary", size="42px")
+        status = ui.label(t("simulation_running")).classes("text-xl font-semibold")
+        ui.label(t("simulated_notice")).classes("ef-muted text-sm")
+        progress = ui.linear_progress(value=0, color="primary").classes("w-full mt-3")
+    dialog.open()
+    for value in (0.08, 0.22, 0.39, 0.58, 0.76, 0.91, 1.0):
+        progress.value = value
+        await asyncio.sleep(0.18)
+    status.set_text(t("simulation_complete"))
+    await asyncio.sleep(0.35)
+    dialog.close()
+    ui.navigate.to(f"/experiments/{experiment_id}")
 
 
 def register() -> None:
@@ -269,6 +290,14 @@ def register() -> None:
                             ui.navigate.to(f"/experiments/{experiment_item.id}")
 
                         ui.button(t("view"), icon="arrow_forward", on_click=view).props("flat")
+                        if settings.showcase_mode and experiment_item.is_demo:
+                            ui.button(
+                                t("replay_simulation"),
+                                icon="play_arrow",
+                                on_click=lambda item_id=experiment_item.id: _replay_simulation(
+                                    item_id
+                                ),
+                            ).props("unelevated no-caps")
                         if not settings.showcase_mode:
                             ui.button(t("edit"), icon="edit", on_click=edit_dialog.open).props(
                                 "flat round"
@@ -314,7 +343,12 @@ def register() -> None:
         with SessionLocal() as db:
             experiment = db.scalar(
                 select(Experiment)
-                .options(selectinload(Experiment.runs).selectinload(ExperimentRun.evaluations))
+                .options(
+                    selectinload(Experiment.runs).selectinload(ExperimentRun.evaluations),
+                    selectinload(Experiment.models)
+                    .selectinload(ExperimentModel.model)
+                    .selectinload(LLMModel.provider),
+                )
                 .where(Experiment.id == parsed_id)
             )
             if not experiment or experiment.workspace_id != workspace.id:
@@ -324,13 +358,65 @@ def register() -> None:
             recommendation = recommendation_service.recommend(
                 metrics, experiment.recommendation_weights or {}
             )
+            model_names = {
+                str(item.model_id): item.model.display_name for item in experiment.models
+            }
+            model_providers = {
+                str(item.model_id): item.model.provider.display_name for item in experiment.models
+            }
+            comparison_rows = [
+                {
+                    "model": model_names.get(model_id, model_id),
+                    "provider": model_providers.get(model_id, ""),
+                    "quality": round(values["quality"], 3),
+                    "pass_rate": round(values["pass_rate"], 3),
+                    "mean_cost": round(values["mean_cost"], 6),
+                    "p95_latency_ms": round(values["p95_latency_ms"]),
+                    "error_rate": round(values["error_rate"], 3),
+                }
+                for model_id, values in metrics.items()
+            ]
+            comparison_rows.sort(key=lambda row: row["quality"], reverse=True)
+            recommendation_id = str(recommendation.get("recommended_model_id") or "")
+            recommendation_name = model_names.get(recommendation_id, t("no_data"))
+            runs_by_model: dict[str, list[ExperimentRun]] = {}
+            for run in experiment.runs:
+                runs_by_model.setdefault(str(run.model_id), []).append(run)
         with page_frame("experiments"):
-            with ui.row().classes("items-center gap-3"):
+            with ui.row().classes("items-center gap-3 w-full flex-wrap"):
                 ui.button(icon="arrow_back", on_click=lambda: ui.navigate.to("/experiments")).props(
                     "flat round"
                 )
                 ui.label(experiment.name).classes("text-2xl font-bold")
                 ui.badge(experiment.status.value.replace("_", " "), color="green")
+                ui.space()
+                if settings.showcase_mode and experiment.is_demo:
+                    ui.button(
+                        t("replay_simulation"),
+                        icon="play_arrow",
+                        on_click=lambda: _replay_simulation(experiment.id),
+                    ).props("unelevated no-caps")
+
+                    def download_demo_report() -> None:
+                        with SessionLocal() as report_db:
+                            payload = report_service.payload(report_db, experiment.id)
+                        content = json.dumps(payload, indent=2, ensure_ascii=False).encode()
+                        ui.download.content(
+                            content,
+                            "evalforge-demo-report.json",
+                            "application/json",
+                        )
+
+                    ui.button(
+                        t("download_demo_report"),
+                        icon="download",
+                        on_click=download_demo_report,
+                    ).props("outline no-caps")
+            if experiment.is_demo:
+                with ui.card().classes("ef-demo w-full p-4 shadow-none"):
+                    with ui.row().classes("items-center gap-3"):
+                        ui.icon("info", color="amber")
+                        ui.label(t("simulated_notice")).classes("font-medium")
             with ui.element("div").classes("ef-summary-grid"):
                 for label, value in [
                     (t("progress"), f"{experiment.progress:.0f}%"),
@@ -342,20 +428,64 @@ def register() -> None:
                         ui.label(label).classes("text-sm ef-muted")
                         ui.label(value).classes("text-2xl font-bold")
             with ui.tabs().classes("w-full") as tabs:
-                overview = ui.tab("Overview")
+                overview = ui.tab(t("overview"))
                 models_tab = ui.tab(t("models"))
+                results_tab = ui.tab(t("results"))
                 errors_tab = ui.tab(t("errors"))
-                config_tab = ui.tab("Configuration")
+                config_tab = ui.tab(t("configuration"))
             with ui.tab_panels(tabs, value=overview).classes("w-full bg-transparent"):
                 with ui.tab_panel(overview):
-                    with ui.card().classes("ef-card p-5"):
-                        ui.label(t("recommendation")).classes("text-xl font-semibold")
-                        ui.label(recommendation.get("reason", ""))
-                        ui.label(
-                            str(recommendation.get("recommended_model_id") or "No recommendation")
-                        ).classes("text-lg text-primary font-medium")
+                    with ui.card().classes("ef-card ef-recommendation-card p-5"):
+                        with ui.row().classes("items-center gap-3"):
+                            ui.icon("verified", color="positive", size="36px")
+                            with ui.column().classes("gap-0"):
+                                ui.label(t("recommendation")).classes("text-sm ef-muted")
+                                ui.label(recommendation_name).classes(
+                                    "text-2xl text-primary font-bold"
+                                )
+                        ui.label(t("recommendation_reason")).classes("ef-muted")
+                    with ui.element("div").classes("ef-charts-grid mt-4"):
+                        with ui.card().classes("ef-card p-5"):
+                            ui.label(t("quality")).classes("text-lg font-semibold")
+                            ui.echart(
+                                {
+                                    "tooltip": {"trigger": "axis"},
+                                    "xAxis": {"type": "value", "max": 1},
+                                    "yAxis": {
+                                        "type": "category",
+                                        "data": [row["model"] for row in comparison_rows],
+                                    },
+                                    "series": [
+                                        {
+                                            "type": "bar",
+                                            "data": [row["quality"] for row in comparison_rows],
+                                            "itemStyle": {"color": "#635BFF", "borderRadius": 6},
+                                        }
+                                    ],
+                                }
+                            ).classes("h-72")
+                        with ui.card().classes("ef-card p-5"):
+                            ui.label(t("latency")).classes("text-lg font-semibold")
+                            ui.echart(
+                                {
+                                    "tooltip": {"trigger": "axis"},
+                                    "xAxis": {
+                                        "type": "category",
+                                        "data": [row["model"] for row in comparison_rows],
+                                    },
+                                    "yAxis": {"type": "value", "name": "ms"},
+                                    "series": [
+                                        {
+                                            "type": "bar",
+                                            "data": [
+                                                row["p95_latency_ms"] for row in comparison_rows
+                                            ],
+                                            "itemStyle": {"color": "#16A085", "borderRadius": 6},
+                                        }
+                                    ],
+                                }
+                            ).classes("h-72")
                 with ui.tab_panel(models_tab):
-                    rows = [{"model": key, **value} for key, value in metrics.items()]
                     columns = [
                         {
                             "name": key,
@@ -365,6 +495,7 @@ def register() -> None:
                         }
                         for key in [
                             "model",
+                            "provider",
                             "quality",
                             "pass_rate",
                             "mean_cost",
@@ -372,9 +503,66 @@ def register() -> None:
                             "error_rate",
                         ]
                     ]
-                    ui.table(columns=columns, rows=rows, pagination=20).classes(
+                    ui.table(columns=columns, rows=comparison_rows, pagination=20).classes(
                         "ef-card w-full"
                     ).props("flat bordered")
+                with ui.tab_panel(results_tab):
+                    for model_id, model_runs in runs_by_model.items():
+                        model_name = model_names.get(model_id, model_id)
+                        with ui.expansion(
+                            f"{model_name}  •  {len(model_runs)} {t('cases').lower()}",
+                            icon="memory",
+                        ).classes("ef-card w-full mb-3"):
+                            for run in sorted(
+                                model_runs,
+                                key=lambda item: str(item.dataset_snapshot.get("name", "")),
+                            ):
+                                evaluation = run.evaluations[0] if run.evaluations else None
+                                passed = bool(evaluation and evaluation.passed)
+                                case_name = str(run.dataset_snapshot.get("name", t("case")))
+                                inputs = run.dataset_snapshot.get("inputs", {})
+                                input_text = (
+                                    str(inputs.get("input_text", ""))
+                                    if isinstance(inputs, dict)
+                                    else str(inputs)
+                                )
+                                with ui.expansion(
+                                    f"{case_name}  •  {evaluation.score:.0%}"
+                                    if evaluation and evaluation.score is not None
+                                    else case_name,
+                                    icon="check_circle" if passed else "error",
+                                ).classes("w-full"):
+                                    with ui.element("div").classes("ef-result-grid p-2"):
+                                        with ui.column().classes("gap-2"):
+                                            ui.label(t("case")).classes("text-xs ef-muted")
+                                            ui.label(input_text).classes("font-medium")
+                                            ui.label(t("answer")).classes("text-xs ef-muted mt-2")
+                                            ui.code(run.raw_response or "").classes("w-full")
+                                        with ui.column().classes("gap-2"):
+                                            ui.badge(
+                                                t("passed") if passed else t("errors"),
+                                                color="green" if passed else "red",
+                                            )
+                                            ui.label(
+                                                f"{t('latency')}: {run.latency_ms:.0f} ms"
+                                                if run.latency_ms is not None
+                                                else t("no_data")
+                                            )
+                                            ui.label(
+                                                f"{t('total_cost')}: {run.total_cost:.6f} {experiment.currency}"
+                                            )
+                                            if evaluation:
+                                                expected = evaluation.details.get("expected")
+                                                ui.label(t("expected")).classes(
+                                                    "text-xs ef-muted mt-2"
+                                                )
+                                                ui.code(
+                                                    json.dumps(
+                                                        expected,
+                                                        indent=2,
+                                                        ensure_ascii=False,
+                                                    )
+                                                ).classes("w-full")
                 with ui.tab_panel(errors_tab):
                     for run in experiment.runs:
                         if run.error_message:
