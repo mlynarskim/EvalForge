@@ -4,6 +4,7 @@ import uuid
 
 from nicegui import ui
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import SessionLocal
@@ -25,7 +26,10 @@ def register() -> None:
         if not workspace:
             return
         with SessionLocal() as db:
-            providers = list(db.scalars(select(Provider).order_by(Provider.display_name)))
+            provider_query = select(Provider).order_by(Provider.display_name)
+            if settings.showcase_mode:
+                provider_query = provider_query.where(Provider.key == "simulated")
+            providers = list(db.scalars(provider_query))
             credentials = {
                 item.provider_id: item
                 for item in db.scalars(
@@ -35,7 +39,9 @@ def register() -> None:
                 )
             }
         with page_frame("providers"):
-            ui.label(t("provider_help")).classes("ef-muted")
+            ui.label(
+                t("simulated_provider_help") if settings.showcase_mode else t("provider_help")
+            ).classes("ef-muted")
             with ui.element("div").classes("ef-card-grid"):
                 for provider in providers:
                     credential = credentials.get(provider.id)
@@ -172,12 +178,23 @@ def register() -> None:
         if workspace is None:
             return
         with SessionLocal() as db:
-            models = list(db.scalars(select(LLMModel).where(LLMModel.workspace_id == workspace.id)))
+            models = list(
+                db.scalars(
+                    select(LLMModel)
+                    .options(selectinload(LLMModel.provider))
+                    .where(
+                        LLMModel.workspace_id == workspace.id,
+                        LLMModel.is_active.is_(True),
+                    )
+                    .order_by(LLMModel.display_name)
+                )
+            )
         with page_frame("models"):
             ui.label(t("model_registry_help")).classes("ef-muted")
             rows = [
                 {
                     "name": item.display_name,
+                    "provider": item.provider.display_name,
                     "model_id": item.model_id,
                     "status": item.status,
                     "active": item.is_active,
@@ -192,6 +209,13 @@ def register() -> None:
                     "name": "name",
                     "label": t("name"),
                     "field": "name",
+                    "sortable": True,
+                    "align": "left",
+                },
+                {
+                    "name": "provider",
+                    "label": t("providers"),
+                    "field": "provider",
                     "sortable": True,
                     "align": "left",
                 },

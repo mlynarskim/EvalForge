@@ -4,6 +4,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.services.auth_service import AuthenticationError, auth_service
 from app.ui.i18n import t
+from app.ui.session import enter_demo
 from app.ui.theme import apply_theme
 
 
@@ -32,11 +33,29 @@ def register() -> None:
                 ui.label("EvalForge").classes("text-3xl font-bold")
             ui.label(t("subtitle")).classes("ef-muted text-center mb-6")
             with ui.card().classes("ef-card w-full max-w-md p-2"):
+                if settings.demo_mode:
+                    with ui.card().classes("ef-demo w-full p-4 shadow-none"):
+                        ui.label(t("demo_credentials")).classes("font-semibold")
+                        ui.label(t("demo_access_help")).classes("text-sm ef-muted")
+                        ui.button(
+                            t("enter_demo"),
+                            icon="play_arrow",
+                            on_click=enter_demo,
+                        ).props("unelevated no-caps").classes("w-full mt-2")
+                        if settings.showcase_mode:
+                            ui.label(t("showcase_read_only")).classes("text-xs mt-1")
+                if settings.showcase_mode:
+                    ui.button(
+                        t("back_to_home"),
+                        icon="arrow_back",
+                        on_click=lambda: ui.navigate.to("/welcome"),
+                    ).props("flat no-caps").classes("w-full mt-2")
+                    return
                 tabs = ui.tabs().classes("w-full")
                 register_tab = None
                 with tabs:
                     sign_in_tab = ui.tab(t("login"), icon="login")
-                    if not settings.showcase_mode:
+                    if settings.registration_enabled and not settings.showcase_mode:
                         register_tab = ui.tab(t("register"), icon="person_add")
                 with ui.tab_panels(tabs, value=sign_in_tab).classes("w-full"):
                     with ui.tab_panel(sign_in_tab):
@@ -63,13 +82,6 @@ def register() -> None:
                         ui.button(t("login"), icon="login", on_click=submit_login).props(
                             "unelevated"
                         ).classes("w-full mt-3")
-                        if settings.demo_mode:
-                            with ui.card().classes("ef-demo w-full mt-4 p-3 shadow-none"):
-                                ui.label(t("demo_credentials")).classes("font-semibold")
-                                ui.label(settings.demo_admin_email).classes("text-sm")
-                                ui.label(settings.demo_admin_password).classes("text-sm font-mono")
-                                if settings.showcase_mode:
-                                    ui.label(t("showcase_read_only")).classes("text-xs mt-2")
                     if register_tab is not None:
                         with ui.tab_panel(register_tab):
                             display_name = ui.input(t("name")).props("outlined").classes("w-full")

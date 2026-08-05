@@ -41,6 +41,13 @@ class ReportService:
             metrics, experiment.recommendation_weights or {}
         )
         names = {str(item.model_id): item.model.display_name for item in experiment.models}
+        recommended_id = str(recommendation.get("recommended_model_id") or "")
+        fallback_id = str(recommendation.get("fallback_model_id") or "")
+        recommendation = {
+            **recommendation,
+            "recommended_model_name": names.get(recommended_id),
+            "fallback_model_name": names.get(fallback_id),
+        }
         return {
             "experiment": {
                 "id": str(experiment.id),
@@ -160,7 +167,7 @@ class ReportService:
             "</tr>"
             for model in payload["models"]
         )
-        recommended = payload["recommendation"].get("recommended_model_id")
+        recommended = payload["recommendation"].get("recommended_model_name")
         return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>EvalForge report</title><style>

@@ -8,6 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models import User, Workspace, WorkspaceMember
 from app.models.entities import Role
@@ -69,3 +70,13 @@ def require_writable() -> None:
         ensure_writable()
     except ShowcaseModeError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+def require_registration_enabled() -> None:
+    if not settings.registration_enabled:
+        raise HTTPException(status_code=403, detail="Public registration is disabled")
+
+
+def require_api_login_enabled() -> None:
+    if settings.showcase_mode:
+        raise HTTPException(status_code=403, detail="API login is disabled in public showcase mode")

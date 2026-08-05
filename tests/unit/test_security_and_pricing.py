@@ -2,7 +2,11 @@ import pytest
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
 
-from app.api.dependencies import require_writable
+from app.api.dependencies import (
+    require_api_login_enabled,
+    require_registration_enabled,
+    require_writable,
+)
 from app.config import Settings, settings
 from app.providers.base import TokenUsage
 from app.services.encryption_service import EncryptionError, EncryptionService
@@ -82,4 +86,18 @@ def test_showcase_mode_rejects_service_and_api_mutations(monkeypatch) -> None:
         ensure_writable()
     with pytest.raises(HTTPException) as captured:
         require_writable()
+    assert getattr(captured.value, "status_code", None) == 403
+
+
+def test_public_registration_is_disabled_by_default(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "registration_enabled", False)
+    with pytest.raises(HTTPException) as captured:
+        require_registration_enabled()
+    assert getattr(captured.value, "status_code", None) == 403
+
+
+def test_showcase_disables_api_login(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "showcase_mode", True)
+    with pytest.raises(HTTPException) as captured:
+        require_api_login_enabled()
     assert getattr(captured.value, "status_code", None) == 403

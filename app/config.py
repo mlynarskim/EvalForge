@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     encryption_key: str | None = None
     demo_mode: bool = True
     showcase_mode: bool = False
+    registration_enabled: bool = False
     demo_admin_email: str = "demo@evalforge.dev"
     demo_admin_password: str = "ChangeMe123!"
     default_language: Literal["en", "pl"] = "en"
@@ -31,6 +32,11 @@ class Settings(BaseSettings):
     eur_to_pln: float = Field(default=4.35, gt=0)
     max_upload_mb: int = Field(default=10, ge=1, le=100)
     max_prompt_length: int = Field(default=100_000, ge=1_000, le=1_000_000)
+    rate_limit_enabled: bool = True
+    rate_limit_requests: int = Field(default=120, ge=10, le=10_000)
+    rate_limit_login_requests: int = Field(default=10, ge=1, le=1_000)
+    rate_limit_page_requests: int = Field(default=60, ge=10, le=10_000)
+    rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
     report_directory: Path = Path("reports")
 
     @field_validator("database_url", mode="before")

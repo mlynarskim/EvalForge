@@ -12,6 +12,7 @@ from app.models import (
     ExperimentRun,
     LLMModel,
     PromptVersion,
+    Provider,
     User,
     WorkspaceMember,
 )
@@ -64,8 +65,19 @@ async def test_experiment_is_prepared_executed_and_persisted(db) -> None:
     membership = db.scalar(select(WorkspaceMember))
     prompt_version = db.scalar(select(PromptVersion))
     dataset_version = db.scalar(select(DatasetVersion))
-    model = db.scalar(select(LLMModel))
-    assert user and membership and prompt_version and dataset_version and model
+    provider = db.scalar(select(Provider).where(Provider.key == "ollama"))
+    assert user and membership and prompt_version and dataset_version and provider
+    model = LLMModel(
+        workspace_id=membership.workspace_id,
+        provider_id=provider.id,
+        model_id="test/execution-model",
+        display_name="Execution Test Model",
+        family="test",
+        is_manual=True,
+        supports_json_mode=True,
+    )
+    db.add(model)
+    db.commit()
     payload = ExperimentCreate(
         name="Execution integration test",
         prompt_version_id=prompt_version.id,
